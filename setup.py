@@ -4,7 +4,7 @@ from setuptools import find_packages
 
 setup(
     name='django-instapush',
-    version='1.0.3',
+    version='1.0.4',
     author='Amyth Arora',
     author_email='mail@amythsingh.com',
     packages=find_packages(),
@@ -20,5 +20,9 @@ setup(
         'requests>=2.8.1',
         'requests-toolbelt>=0.4.0',
         'future'
-    ]
+    ],
+    classifiers=[
+        'Programming Language :: Python ',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7'],
 )
