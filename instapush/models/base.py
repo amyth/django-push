@@ -1,3 +1,4 @@
+from builtins import object
 from django.conf import settings
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
@@ -36,7 +37,7 @@ class BaseDevice(models.Model):
     created = models.DateTimeField(_('created'), auto_now_add=True)
     updated = models.DateTimeField(_('updated'), auto_now=True)
 
-    class Meta:
+    class Meta(object):
         abstract = True
 
 
@@ -56,7 +57,7 @@ class GCMDevice(BaseDevice):
     ## Set custom manager
     objects = GCMDeviceManager()
 
-    class Meta:
+    class Meta(object):
         verbose_name = _('GCM Device')
         verbose_name_plural = _('GCM Devices')
 
@@ -87,7 +88,7 @@ class APNSDevice(BaseDevice):
     ## Set custom manager
     APNSDeviceManager()
 
-    class Meta:
+    class Meta(object):
         verbose_name = _('APNS Device')
         verbose_name_plural = _('APNS Devices')
 
