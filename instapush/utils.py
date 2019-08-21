@@ -1,5 +1,4 @@
-from bultins import str
-from builtins import bytes
+from builtins import bytes, str
 import importlib
 
 
