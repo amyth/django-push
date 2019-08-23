@@ -1,22 +1,25 @@
+from ..settings import INSTAPUSH_SETTINGS as settings
+from ..exceptions import GCMPushError
+from django.core.exceptions import ImproperlyConfigured
+from django.conf import settings as django_settings
+import json
+from builtins import object
+from builtins import range
+from builtins import str
 """
 A stand-alone library to send GCM push notifications
 """
 
-import json
+from future import standard_library
+standard_library.install_aliases()
 
-## import urllib methods
+# import urllib methods
 try:
     from urllib.request import Request, urlopen
     from urllib.parse import urlencode
 except ImportError:
-    from urllib2 import Request, urlopen
-    from urllib import urlencode
-
-from django.conf import settings as django_settings
-from django.core.exceptions import ImproperlyConfigured
-
-from ..exceptions import GCMPushError
-from ..settings import INSTAPUSH_SETTINGS as settings
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlencode
 
 
 class GCMMessenger(object):
@@ -28,10 +31,10 @@ class GCMMessenger(object):
         self._kwargs = kwargs
         self.encoding = encoding
 
-        for k,v in kwargs.items():
+        for k, v in kwargs.items():
             setattr(self, k, v)
 
-        ## Check for required settings
+        # Check for required settings
         self._prepare_settings()
 
     def _chunks(self):
@@ -40,14 +43,14 @@ class GCMMessenger(object):
 
     def _prepare_settings(self):
 
-        cons = ['API_KEY',]
+        cons = ['API_KEY', ]
         gcm_settings = settings.get('GCM_SETTINGS')
 
         for x in cons:
             item = gcm_settings.get(x)
             if (not item) and (not hasattr(self, x.lower())):
-                raise ImproperlyConfigured("Please add %s to your "\
-                        "GCM_SETTINGS to send notifications through gcm" % x)
+                raise ImproperlyConfigured("Please add %s to your "
+                                           "GCM_SETTINGS to send notifications through gcm" % x)
 
         for x in gcm_settings:
             if not hasattr(self, x.lower()):
@@ -69,11 +72,12 @@ class GCMMessenger(object):
                 values[key] = val
 
         data = urlencode(sorted(values.items())).encode(self.encoding)
-        result = self._send(data, "application/x-www-form-urlencoded;charset=UTF-8")
+        result = self._send(
+            data, "application/x-www-form-urlencoded;charset=UTF-8")
 
         if result.startswith("Error="):
             if result in ("Error=NotRegistered", "Error=InvalidRegistration"):
-                ## TODO: deactivate the unregistered device
+                # TODO: deactivate the unregistered device
                 return result
 
             raise GCMPushError(result)
@@ -96,7 +100,7 @@ class GCMMessenger(object):
                 values[key] = val
 
         data = json.dumps(values, separators=(",", ":"), sort_keys=True).encode(
-                self.encoding)
+            self.encoding)
 
         result = json.loads(self._send(data, "application/json"))
 
@@ -128,9 +132,8 @@ class GCMMessenger(object):
 
     def deactivate_unregistered_devices(self, rids):
         deactivate_callback = settings.get('GCM_SETTINGS').get(
-                'DEACTIVATE_UNREG_CALLBACK')
+            'DEACTIVATE_UNREG_CALLBACK')
         deactivate_callback(rids)
-
 
     def _send(self, data, content_type):
         """
@@ -152,7 +155,8 @@ def gcm_send_message(registration_id, data, encoding='utf-8', **kwargs):
     Standalone method to send a single gcm notification
     """
 
-    messenger = GCMMessenger(registration_id, data, encoding=encoding, **kwargs)
+    messenger = GCMMessenger(registration_id, data,
+                             encoding=encoding, **kwargs)
     return messenger.send_plain()
 
 
@@ -161,5 +165,6 @@ def gcm_send_bulk_message(registration_ids, data, encoding='utf-8', **kwargs):
     Standalone method to send bulk gcm notifications
     """
 
-    messenger = GCMMessenger(registration_ids, data, encoding=encoding, **kwargs)
+    messenger = GCMMessenger(registration_ids, data,
+                             encoding=encoding, **kwargs)
     return messenger.send_bulk()

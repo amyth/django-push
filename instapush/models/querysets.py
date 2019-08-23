@@ -1,3 +1,4 @@
+from builtins import object
 from django.db import models
 from mongoengine.queryset import QuerySet
 

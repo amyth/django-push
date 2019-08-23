@@ -10,6 +10,7 @@ import socket
 import time
 from contextlib import closing
 from binascii import unhexlify
+from io import open
 
 from django.core.exceptions import ImproperlyConfigured
 from ..exceptions import (
@@ -33,7 +34,8 @@ def _check_certificate(ss):
                 mode = 'end'
                 break
             elif s.startswith('Proc-Type') and 'ENCRYPTED' in s:
-                raise Exception("The certificate private key should not be encrypted")
+                raise Exception(
+                    "The certificate private key should not be encrypted")
     if mode != 'end':
         raise Exception("The certificate doesn't contain a private key")
 
@@ -49,17 +51,20 @@ def _apns_create_socket(address_tuple, **kwargs):
         with open(certfile, "r") as f:
             content = f.read()
     except Exception as e:
-        raise ImproperlyConfigured("The APNS certificate file at %r is not readable: %s" % (certfile, e))
+        raise ImproperlyConfigured(
+            "The APNS certificate file at %r is not readable: %s" % (certfile, e))
 
     try:
         _check_certificate(content)
     except Exception as e:
-        raise ImproperlyConfigured("The APNS certificate file at %r is unusable: %s" % (certfile, e))
+        raise ImproperlyConfigured(
+            "The APNS certificate file at %r is unusable: %s" % (certfile, e))
 
     ca_certs = SETTINGS.get("APNS_CA_CERTIFICATES")
 
     sock = socket.socket()
-    sock = ssl.wrap_socket(sock, ssl_version=ssl.PROTOCOL_TLSv1, certfile=certfile, ca_certs=ca_certs)
+    sock = ssl.wrap_socket(sock, ssl_version=ssl.PROTOCOL_TLSv1,
+                           certfile=certfile, ca_certs=ca_certs)
     sock.connect(address_tuple)
 
     return sock
@@ -76,7 +81,8 @@ def _apns_create_socket_to_feedback():
 def _apns_pack_frame(token_hex, payload, identifier, expiration, priority):
     token = unhexlify(token_hex)
     # |COMMAND|FRAME-LEN|{token}|{payload}|{id:4}|{expiration:4}|{priority:1}
-    frame_len = 3 * 5 + len(token) + len(payload) + 4 + 4 + 1  # 5 items, each 3 bytes prefix, then each item length
+    # 5 items, each 3 bytes prefix, then each item length
+    frame_len = 3 * 5 + len(token) + len(payload) + 4 + 4 + 1
     frame_fmt = "!BIBH%ssBH%ssBHIBHIBHB" % (len(token), len(payload))
     frame = struct.pack(
         frame_fmt,
@@ -114,8 +120,8 @@ def _apns_check_errors(sock):
 
 
 def _apns_send(token, alert, badge=None, sound="default", category=None, content_available=True,
-    action_loc_key=None, loc_key=None, loc_args=[], title_loc_key=None, title_loc_args=None,
-    extra={}, identifier=0, expiration=None, priority=10, socket=None, **kwargs):
+               action_loc_key=None, loc_key=None, loc_args=[], title_loc_key=None, title_loc_args=None,
+               extra={}, identifier=0, expiration=None, priority=10, socket=None, **kwargs):
     data = {}
     aps_data = {}
 
@@ -159,16 +165,20 @@ def _apns_send(token, alert, badge=None, sound="default", category=None, content
     data.update(extra)
 
     # convert to json, avoiding unnecessary whitespace with separators (keys sorted for tests)
-    json_data = json.dumps(data, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    json_data = json.dumps(data, separators=(",", ":"),
+                           sort_keys=True).encode("utf-8")
 
     max_size = SETTINGS["MAX_SIZE"]
     if len(json_data) > max_size:
-        raise APNSDataOverflow("Notification body cannot exceed %i bytes" % (max_size))
+        raise APNSDataOverflow(
+            "Notification body cannot exceed %i bytes" % (max_size))
 
     # if expiration isn't specified use 1 month from now
-    expiration_time = expiration if expiration is not None else int(time.time()) + 2592000
+    expiration_time = expiration if expiration is not None else int(
+        time.time()) + 2592000
 
-    frame = _apns_pack_frame(token, json_data, identifier, expiration_time, priority)
+    frame = _apns_pack_frame(
+        token, json_data, identifier, expiration_time, priority)
 
     if socket:
         socket.write(frame)
@@ -238,7 +248,8 @@ def apns_send_bulk_message(registration_ids, alert, **kwargs):
     """
     with closing(_apns_create_socket_to_push(**kwargs)) as socket:
         for identifier, registration_id in enumerate(registration_ids):
-            _apns_send(registration_id, alert, identifier=identifier, socket=socket, **kwargs)
+            _apns_send(registration_id, alert,
+                       identifier=identifier, socket=socket, **kwargs)
         _apns_check_errors(socket)
 
 

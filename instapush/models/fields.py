@@ -2,6 +2,7 @@
 Code by jleclanche @ https://github.com/jleclanche/django-push-notifications/blob/master/push_notifications/fields.py
 """
 
+from builtins import hex
 import re
 import struct
 from django import forms
